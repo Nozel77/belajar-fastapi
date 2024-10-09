@@ -1,6 +1,17 @@
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional
 app = FastAPI()
+
+class Product(BaseModel):
+    id: Optional[int] = None
+    name: str
+    description: str
+    regular_price: int
+    large_price: int
+    category: str
+    image: str
 
 PRODUCT = [
     {
@@ -160,16 +171,18 @@ async def get_detail_product(id: int):
     raise HTTPException(status_code=404, detail="Product not found")
 
 @app.post("/product")
-async def create_product(new_product=Body(...)):
-    PRODUCT.append(new_product)
-    return JSONResponse(content={"status_code": 201, "message": "Product created", "data": new_product})
+async def create_product(new_product: Product):
+    new_product.id = len(PRODUCT) + 1
+    PRODUCT.append(new_product.model_dump())
+    return JSONResponse(content={"status_code": 201, "message": "Product created", "data": new_product.model_dump()})
+
 
 @app.put("/product/{id}")
-async def update_product(id: int, new_product=Body(...)):
+async def update_product(id: int, updated_product: Product):
     for product in PRODUCT:
         if product.get('id') == id:
-            product.update(new_product)
-            return JSONResponse(content={"status_code": 200, "message": "Product updated", "data": product})
+            product.update(updated_product.model_dump())
+            return JSONResponse(content={"status_code": 200, "message": "Product updated", "data": updated_product.model_dump()})
     raise HTTPException(status_code=404, detail="Product not found")
 
 @app.delete("/product/{id}")
