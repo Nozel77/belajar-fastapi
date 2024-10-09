@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 app = FastAPI()
 
@@ -14,6 +14,7 @@ class Product(BaseModel):
     image: str
 
 class ProductCreate(BaseModel):
+    id: int = Field(default=None)
     name: Optional[str] = None
     description: Optional[str] = None
     regular_price: Optional[int] = None
@@ -191,17 +192,21 @@ async def get_detail_product(id: int):
 @app.post("/product")
 async def create_product(new_product: ProductCreate):
     if new_product.regular_price <= 0 or new_product.large_price <= 0:
-        raise HTTPException(status_code=400, detail="regular price and large price must be greater than 0.")
+        raise HTTPException(status_code=400, detail="Regular price and large price must be greater than 0.")
     if len(PRODUCT) > 0:
-        new_id = max([product['id'] for product in PRODUCT]) + 1
+        new_id = max(product['id'] for product in PRODUCT) + 1
     else:
         new_id = 1
-    new_product.id = new_id
-    PRODUCT.append(new_product.model_dump())
-    return JSONResponse(content={"status_code": 201, "message": "Product created", "data": new_product.model_dump()})
+    product_data = new_product.dict()
+    product_data['id'] = new_id
+    PRODUCT.append(product_data)
+
+    return JSONResponse(content={"status_code": 201, "message": "Product created", "data": product_data})
 
 @app.put("/product/{id}")
 async def update_product(id: int, updated_product: ProductUpdate):
+    if updated_product.regular_price <= 0 or updated_product.large_price <= 0:
+        raise HTTPException(status_code=400, detail="Regular price and large price must be greater than 0.")
     for product in PRODUCT:
         if product.get('id') == id:
             updated_product_dict = updated_product.model_dump()
