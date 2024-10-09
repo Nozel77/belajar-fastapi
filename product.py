@@ -13,6 +13,23 @@ class Product(BaseModel):
     category: str
     image: str
 
+class ProductCreate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    regular_price: Optional[int] = None
+    large_price: Optional[int] = None
+    category: Optional[str] = None
+    image: Optional[str] = None
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    regular_price: Optional[int] = None
+    large_price: Optional[int] = None
+    category: Optional[str] = None
+    image: Optional[str] = None
+
+
 PRODUCT = [
     {
         "id": 1,
@@ -170,20 +187,29 @@ async def get_detail_product(id: int):
             return JSONResponse(content={"status_code": 200, "message": "Success", "data": product})
     raise HTTPException(status_code=404, detail="Product not found")
 
+
 @app.post("/product")
-async def create_product(new_product: Product):
-    new_product.id = len(PRODUCT) + 1
+async def create_product(new_product: ProductCreate):
+    if new_product.regular_price <= 0 or new_product.large_price <= 0:
+        raise HTTPException(status_code=400, detail="regular price and large price must be greater than 0.")
+    if len(PRODUCT) > 0:
+        new_id = max([product['id'] for product in PRODUCT]) + 1
+    else:
+        new_id = 1
+    new_product.id = new_id
     PRODUCT.append(new_product.model_dump())
     return JSONResponse(content={"status_code": 201, "message": "Product created", "data": new_product.model_dump()})
 
-
 @app.put("/product/{id}")
-async def update_product(id: int, updated_product: Product):
+async def update_product(id: int, updated_product: ProductUpdate):
     for product in PRODUCT:
         if product.get('id') == id:
-            product.update(updated_product.model_dump())
-            return JSONResponse(content={"status_code": 200, "message": "Product updated", "data": updated_product.model_dump()})
+            updated_product_dict = updated_product.model_dump()
+            updated_product_dict.pop('id', None)
+            product.update(updated_product_dict)
+            return JSONResponse(content={"status_code": 200, "message": "Product updated", "data": product})
     raise HTTPException(status_code=404, detail="Product not found")
+
 
 @app.delete("/product/{id}")
 async def delete_product(id: int):
