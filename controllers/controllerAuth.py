@@ -1,6 +1,6 @@
 # auth.py
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, Annotated
 import jwt
 import os
 from dotenv import load_dotenv
@@ -20,6 +20,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 users_collection = db["users"]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
@@ -74,16 +75,21 @@ async def login(username: str, password: str):
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(data={"sub": user["username"]})
-    user_data = {
-        "username": user["username"],
-        "email": user["email"],
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
-    return ApiResponse(status_code=200, status="success", message="Login Successfully", data=user_data)
+    # user_data = {
+    #     "username": user["username"],
+    #     "email": user["email"],
+    #     "access_token": access_token,
+    #     "token_type": "bearer"
+    # }
+
+    print(access_token)
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+    # return ApiResponse(status_code=200, status="success", message="Login Successfully", data=access_token)
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -118,8 +124,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
     return user
 
-
-# Function to check user roles
 def check_user_role(required_role: str):
     async def role_checker(current_user: dict = Depends(get_current_user)):
         user = current_user
