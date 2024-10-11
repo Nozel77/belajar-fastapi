@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+
+from auth.roleAuth import role_required
 from config.customResponse import ApiResponse
-from schemas.product import ProductCreate, ProductUpdate, ProductResponse
+from schemas.product import ProductCreate, ProductUpdate
 from controllers.controllerProduct import ProductController
 from schemas.validators import validate_object_id
 
@@ -9,12 +11,13 @@ router = APIRouter(
     tags=["product"],
 )
 
-@router.get("/", response_model=ApiResponse)
+@router.get("/", response_model=ApiResponse,
+             dependencies=[Depends(lambda: role_required(["user"]))])
 async def get_all_products():
     products = await ProductController.get_all_products()
     return ApiResponse(status_code=200, status="success", message="success get all data", data=products)
 
-@router.get("/{id}", response_model=ApiResponse)
+@router.get("/{id}", response_model=ApiResponse, dependencies=[Depends(lambda: role_required(["user"]))])
 async def get_product(id: str):
     validate_object_id(id)
     product = await ProductController.get_product_by_id(id)
@@ -22,12 +25,12 @@ async def get_product(id: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
     return ApiResponse(status_code=200, status="success", message="success get data", data=product)
 
-@router.post("/", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ApiResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(lambda: role_required(["user"]))])
 async def create_product(product: ProductCreate):
     created_product = await ProductController.create_product(product)
     return ApiResponse(status_code=201, status="success", message="success create data", data=created_product)
 
-@router.put("/{id}", response_model=ApiResponse, status_code=status.HTTP_200_OK)
+@router.put("/{id}", response_model=ApiResponse, status_code=status.HTTP_200_OK, dependencies=[Depends(lambda: role_required(["user"]))])
 async def update_product(id: str, product: ProductUpdate):
     validate_object_id(id)
     updated_product = await ProductController.update_product(id, product)
@@ -35,7 +38,7 @@ async def update_product(id: str, product: ProductUpdate):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
     return ApiResponse(status_code=200, status="success", message="success updated data", data=updated_product)
 
-@router.delete("/{id}", response_model=ApiResponse, status_code=status.HTTP_200_OK)
+@router.delete("/{id}", response_model=ApiResponse, status_code=status.HTTP_200_OK, dependencies=[Depends(lambda: role_required(["user"]))])
 async def delete_product(id: str):
     validate_object_id(id)
     deleted_count = await ProductController.delete_product(id)

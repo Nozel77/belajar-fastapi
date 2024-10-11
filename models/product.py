@@ -13,30 +13,32 @@ def product_helper(product) -> dict:
         "image": product["image"]
     }
 
+product_collection = db["products"]
+
 class ProductModel:
     @staticmethod
     async def get_all_products():
         products = []
-        async for product in db["products"].find():
+        async for product in product_collection.find():
             products.append(product_helper(product))
         return products
 
     @staticmethod
     async def get_product_by_id(product_id: str):
-        product = await db["products"].find_one({"_id": ObjectId(product_id)})
+        product = await product_collection.find_one({"_id": ObjectId(product_id)})
         if product:
             return product_helper(product)
         return None
 
     @staticmethod
     async def create_product(product_data: dict):
-        new_product = await db["products"].insert_one(product_data)
-        created_product = await db["products"].find_one({"_id": new_product.inserted_id})
+        new_product = await product_collection.insert_one(product_data)
+        created_product = await product_collection.find_one({"_id": new_product.inserted_id})
         return product_helper(created_product)
 
     @staticmethod
     async def update_product(product_id: str, product_data: dict):
-        updated_product = await db["products"].update_one(
+        updated_product = await product_collection.update_one(
             {"_id": ObjectId(product_id)}, {"$set": product_data}
         )
         if updated_product.modified_count:
@@ -45,5 +47,5 @@ class ProductModel:
 
     @staticmethod
     async def delete_product(product_id: str):
-        deleted_product = await db["products"].delete_one({"_id": ObjectId(product_id)})
+        deleted_product = await product_collection.delete_one({"_id": ObjectId(product_id)})
         return deleted_product.deleted_count
