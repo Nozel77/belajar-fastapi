@@ -76,8 +76,8 @@ async def login(username: str, password: str):
         )
     access_token = create_access_token(data={"sub": user["username"]})
     # user_data = {
-    #     "username": user["username"],
-    #     "email": user["email"],
+    #     "username": user.py["username"],
+    #     "email": user.py["email"],
     #     "access_token": access_token,
     #     "token_type": "bearer"
     # }
